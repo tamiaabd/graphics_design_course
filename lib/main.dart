@@ -7,10 +7,17 @@ import 'supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+
+  // Initialize Supabase with a timeout so a slow network never delays startup.
+  try {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    ).timeout(const Duration(seconds: 5));
+  } catch (_) {
+    // Network too slow or offline — app continues and login screen handles it.
+  }
+
   runApp(const MyApp());
 }
 

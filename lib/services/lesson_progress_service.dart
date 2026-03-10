@@ -1,24 +1,31 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LessonProgressService {
+/// Singleton service that tracks lesson completion locally.
+/// Extends [ChangeNotifier] so any widget can listen and rebuild when
+/// progress changes (e.g. the progress bar updates instantly on toggle).
+class LessonProgressService extends ChangeNotifier {
   LessonProgressService._();
 
   static final LessonProgressService instance = LessonProgressService._();
 
-  final SupabaseClient _client = Supabase.instance.client;
-
-  /// In-memory cache of global lesson progress keyed by lessonKey.
   final Map<String, bool> _progress = {};
 
   Map<String, bool> get progress => Map.unmodifiable(_progress);
 
+  double get ratio {
+    if (_progress.isEmpty) return 0.0;
+    final completed = _progress.values.where((v) => v).length;
+    return completed / _progress.length;
+  }
+
+  bool isCompleted(String lessonKey) => _progress[lessonKey] ?? false;
+
+  /// Load persisted progress from SharedPreferences on app start.
   Future<void> loadAll() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Step 1: Load from local cache immediately (works offline too).
     final cached = prefs.getString('cached_lesson_progress');
     if (cached != null) {
       try {
@@ -28,51 +35,19 @@ class LessonProgressService {
           ..addEntries(
             map.entries.map((e) => MapEntry(e.key, e.value as bool)),
           );
+        notifyListeners();
       } catch (_) {
-        // Corrupt cache — ignore and fetch fresh.
+        // Corrupt cache — start fresh.
       }
     }
-
-    // Step 2: Try to fetch fresh data from Supabase in the background.
-    try {
-      final rows = await _client
-          .from('lesson_progress')
-          .select('lesson_key, completed');
-      _progress
-        ..clear()
-        ..addEntries(rows.map<MapEntry<String, bool>>(
-          (row) => MapEntry(
-            row['lesson_key'] as String,
-            (row['completed'] as bool?) ?? false,
-          ),
-        ));
-      // Save fresh data to local cache.
-      await prefs.setString('cached_lesson_progress', jsonEncode(_progress));
-    } catch (_) {
-      // Offline — keep using the cache loaded in step 1.
-    }
   }
 
-  bool isCompleted(String lessonKey) {
-    return _progress[lessonKey] ?? false;
-  }
-
+  /// Toggle a lesson's completion and persist locally.
   Future<void> toggle(String lessonKey) async {
-    final newValue = !isCompleted(lessonKey);
-    _progress[lessonKey] = newValue;
+    _progress[lessonKey] = !isCompleted(lessonKey);
+    notifyListeners(); // ← triggers instant UI rebuild everywhere
 
-    // Save to local cache immediately (instant, no network needed).
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('cached_lesson_progress', jsonEncode(_progress));
-
-    // Then try to sync to Supabase.
-    try {
-      await _client.from('lesson_progress').upsert({
-        'lesson_key': lessonKey,
-        'completed': newValue,
-      });
-    } catch (_) {
-      // Offline — the toggle is saved locally and will sync on next loadAll().
-    }
   }
 }

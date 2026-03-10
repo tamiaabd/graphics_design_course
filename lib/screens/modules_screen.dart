@@ -46,10 +46,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF6366F1),
-            Colors.white,
-          ],
+          colors: [Color(0xFF6366F1), Colors.white],
           stops: [0.0, 0.15],
         ),
       ),
@@ -72,22 +69,29 @@ class _ModulesScreenState extends State<ModulesScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF6366F1),
-            Colors.white,
-          ],
+          colors: [Color(0xFF6366F1), Colors.white],
           stops: [0.0, 0.15],
         ),
       ),
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: graphicDesignCourse.modules.length + 2,
-        itemBuilder: (context, index) {
-          if (index == 0) return const ProgressIndicatorWidget();
-          if (index == 1) return const SizedBox(height: 24);
-          final module = graphicDesignCourse.modules[index - 2];
-          return _buildModuleCard(context, module);
-        },
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1080),
+          child: ListView.builder(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.of(context).padding.bottom + 4,
+            ),
+            itemCount: graphicDesignCourse.modules.length + 2,
+            itemBuilder: (context, index) {
+              if (index == 0) return const ProgressIndicatorWidget();
+              if (index == 1) return const SizedBox(height: 24);
+              final module = graphicDesignCourse.modules[index - 2];
+              return _buildModuleCard(context, module);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -133,10 +137,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        module.icon,
-                        style: const TextStyle(fontSize: 24),
-                      ),
+                      Text(module.icon, style: const TextStyle(fontSize: 24)),
                       Text(
                         '${module.number}',
                         style: TextStyle(
@@ -193,11 +194,7 @@ class _ModulesScreenState extends State<ModulesScreen> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: module.color,
-                  size: 20,
-                ),
+                Icon(Icons.arrow_forward_ios, color: module.color, size: 20),
               ],
             ),
           ),

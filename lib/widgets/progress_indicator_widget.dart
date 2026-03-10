@@ -2,8 +2,30 @@ import 'package:flutter/material.dart';
 import '../models/course_data.dart';
 import '../services/lesson_progress_service.dart';
 
-class ProgressIndicatorWidget extends StatelessWidget {
+class ProgressIndicatorWidget extends StatefulWidget {
   const ProgressIndicatorWidget({super.key});
+
+  @override
+  State<ProgressIndicatorWidget> createState() =>
+      _ProgressIndicatorWidgetState();
+}
+
+class _ProgressIndicatorWidgetState extends State<ProgressIndicatorWidget> {
+  @override
+  void initState() {
+    super.initState();
+    LessonProgressService.instance.addListener(_onProgressChanged);
+  }
+
+  @override
+  void dispose() {
+    LessonProgressService.instance.removeListener(_onProgressChanged);
+    super.dispose();
+  }
+
+  void _onProgressChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +78,8 @@ class ProgressIndicatorWidget extends StatelessWidget {
           LinearProgressIndicator(
             value: ratio,
             backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              const Color(0xFF6366F1),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              Color(0xFF6366F1),
             ),
             minHeight: 8,
             borderRadius: BorderRadius.circular(4),
